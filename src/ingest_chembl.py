@@ -10,9 +10,20 @@ while True:
         "limit": limit,
         "offset": offset
     }
-    response = requests.get(url, params=params, timeout=30)
+    try:
+        response = requests.get(url, params=params, timeout=30)
+        data = response.json()
+        response.raise_for_status()
+    except requests.exceptions.HTTPError as e:
+        print("HTTP error:", e)
+    except requests.exceptions.Timeout as e:
+        print("Timeout error:", e)
+    except requests.RequestException as e:
+        print("Request error:", e)
 
-    data = response.json()
+    except ValueError as e:
+        print("Value error:", e)
+
     print("Page:", page)
     print("Offset:", offset)
     print("Number of records:", len(data["activities"]))
