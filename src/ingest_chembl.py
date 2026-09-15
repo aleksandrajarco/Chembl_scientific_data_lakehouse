@@ -6,7 +6,6 @@ import requests
 
 url = "https://www.ebi.ac.uk/chembl/api/data/activity.json"
 
-
 def save_json(file_path, data):
     with open(file_path, "w", encoding="utf-8") as f:
         json.dump(data, f, indent=2)
@@ -19,8 +18,12 @@ def read_or_create_state(state_file):
 
         page = state["page"]
         offset = state["offset"]
-
-        print("Resuming from page:", page)
+        completed = state["completed"]
+        if completed:
+            print("pagination already completed")
+            return None, None
+        else:
+            print("Resuming from page:", page)
 
     else:
         page = 1
@@ -30,13 +33,10 @@ def read_or_create_state(state_file):
 
     return page, offset
 
-
 def open_page_file(file_path):
     with open(file_path, "r", encoding="utf-8") as f:
         data = json.load(f)
-
     return data
-
 
 def paginate_over_api(output_dir, state_file, page, limit, offset):
 
@@ -94,6 +94,12 @@ def paginate_over_api(output_dir, state_file, page, limit, offset):
 
         if len(data["activities"]) < limit:
             print("Last page reached.")
+            completed = True
+            state = {
+                "page": page,
+                "offset": offset,
+                "completed": completed}
+            save_json(state_file, state)
             break
 
         offset += limit
@@ -101,8 +107,8 @@ def paginate_over_api(output_dir, state_file, page, limit, offset):
 
         state = {
             "page": page,
-            "offset": offset
-        }
+            "offset": offset,
+            "completed": False}
 
         save_json(state_file, state)
 
@@ -117,14 +123,14 @@ def main():
     state_file = output_dir / "chembl_state.json"
 
     page, offset = read_or_create_state(state_file)
-
-    paginate_over_api(
-        output_dir,
-        state_file,
-        page,
-        limit,
-        offset
-    )
+    if page is not None:
+        paginate_over_api(
+            output_dir,
+            state_file,
+            page,
+            limit,
+            offset
+        )
 
 
 if __name__ == "__main__":
