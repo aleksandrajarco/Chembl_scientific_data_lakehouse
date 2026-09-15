@@ -1,10 +1,9 @@
 import json
-from pathlib import Path
+from config import API_URL, OUTPUT_DIR, PAGE_SIZE, STATE_FILE
 
 import requests
 
 
-url = "https://www.ebi.ac.uk/chembl/api/data/activity.json"
 
 def save_json(file_path, data):
     with open(file_path, "w", encoding="utf-8") as f:
@@ -38,7 +37,7 @@ def open_page_file(file_path):
         data = json.load(f)
     return data
 
-def paginate_over_api(output_dir, state_file, page, limit, offset):
+def paginate_over_api(url, output_dir, state_file, page, limit, offset):
 
     while True:
 
@@ -114,17 +113,17 @@ def paginate_over_api(output_dir, state_file, page, limit, offset):
 
 
 def main():
-
-    limit = 100
-
-    output_dir = Path("data/raw")
+    url = API_URL
+    limit = PAGE_SIZE
+    output_dir = OUTPUT_DIR
+    state_file = STATE_FILE
     output_dir.mkdir(parents=True, exist_ok=True)
 
-    state_file = output_dir / "chembl_state.json"
 
     page, offset = read_or_create_state(state_file)
     if page is not None:
         paginate_over_api(
+            url,
             output_dir,
             state_file,
             page,
