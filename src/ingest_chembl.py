@@ -9,8 +9,7 @@ def save_json(file_path :Path, data: dict) -> None:
     with open(file_path, "w", encoding="utf-8") as f:
         json.dump(data, f, indent=2)
 
-
-def read_or_create_state(state_file: Path):
+def read_or_create_state(state_file: Path) ->tuple[int|None, int|None]:
     if state_file.exists():
         with open(state_file, "r", encoding="utf-8") as f:
             state = json.load(f)
@@ -75,7 +74,7 @@ def paginate_over_api(
                 data = response.json()
 
             except requests.exceptions.HTTPError as e:
-                print(f"HTTP error:", {e})
+                print(f"HTTP error: {e}")
                 break
 
             except requests.exceptions.Timeout as e:
@@ -119,7 +118,6 @@ def paginate_over_api(
         }
 
         save_json(state_file, state)
-
 
 def main():
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
