@@ -1,16 +1,16 @@
 import json
+from pathlib import Path
+
 from config import API_URL, OUTPUT_DIR, PAGE_SIZE, STATE_FILE
 
 import requests
 
-
-
-def save_json(file_path, data):
+def save_json(file_path :Path, data: dict) -> None:
     with open(file_path, "w", encoding="utf-8") as f:
         json.dump(data, f, indent=2)
 
 
-def read_or_create_state(state_file):
+def read_or_create_state(state_file: Path):
     if state_file.exists():
         with open(state_file, "r", encoding="utf-8") as f:
             state = json.load(f)
@@ -32,12 +32,19 @@ def read_or_create_state(state_file):
 
     return page, offset
 
-def open_page_file(file_path):
+def open_page_file(file_path: Path) -> dict:
     with open(file_path, "r", encoding="utf-8") as f:
         data = json.load(f)
     return data
 
-def paginate_over_api(url, output_dir, state_file, page, limit, offset):
+def paginate_over_api(
+        url: str,
+        output_dir :Path,
+        state_file: Path,
+        page: int,
+        limit: int,
+        offset: int
+    ) -> None:
 
     while True:
 
@@ -68,36 +75,37 @@ def paginate_over_api(url, output_dir, state_file, page, limit, offset):
                 data = response.json()
 
             except requests.exceptions.HTTPError as e:
-                print("HTTP error:", e)
+                print(f"HTTP error:", {e})
                 break
 
             except requests.exceptions.Timeout as e:
-                print("Timeout error:", e)
+                print(f"Timeout error:{e}")
                 break
 
             except requests.RequestException as e:
-                print("Request error:", e)
+                print(f"Request error:{e}")
                 break
 
             except ValueError as e:
-                print("Value error:", e)
+                print(f"Invalid JSON response:{e}")
                 break
 
             save_json(file_path, data)
 
             print("Saved:", file_path)
 
+        records = data["activities"]
+
         print("Page:", page)
         print("Offset:", offset)
-        print("Number of records:", len(data["activities"]))
+        print("Number of records:", len(records))
 
-        if len(data["activities"]) < limit:
+        if len(records) < limit:
             print("Last page reached.")
-            completed = True
             state = {
                 "page": page,
                 "offset": offset,
-                "completed": completed}
+                "completed": True}
             save_json(state_file, state)
             break
 
@@ -107,27 +115,23 @@ def paginate_over_api(url, output_dir, state_file, page, limit, offset):
         state = {
             "page": page,
             "offset": offset,
-            "completed": False}
+            "completed": False
+        }
 
         save_json(state_file, state)
 
 
 def main():
-    url = API_URL
-    limit = PAGE_SIZE
-    output_dir = OUTPUT_DIR
-    state_file = STATE_FILE
-    output_dir.mkdir(parents=True, exist_ok=True)
-
-
-    page, offset = read_or_create_state(state_file)
+    OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+    STATE_FILE.parent.mkdir(parents=True, exist_ok=True)
+    page, offset = read_or_create_state(STATE_FILE)
     if page is not None:
         paginate_over_api(
-            url,
-            output_dir,
-            state_file,
+            API_URL,
+            OUTPUT_DIR,
+            STATE_FILE,
             page,
-            limit,
+            PAGE_SIZE,
             offset
         )
 
