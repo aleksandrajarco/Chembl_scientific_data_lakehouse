@@ -97,18 +97,6 @@ def explain_filter(
         .explain()
     )
 
-
-def run_partitioning_experiment(
-    df: DataFrame,
-    output_path: Path,
-) -> None:
-    """Write and inspect a dataset partitioned by standard_type."""
-
-    write_parquet(
-        df.write.partitionBy("standard_type"),
-        output_path,
-    )
-
 def write_partitioned_parquet(
     df: DataFrame,
     output_path: Path,
@@ -183,7 +171,6 @@ def main() -> None:
         )
 
     finally:
-        input("Press Enter to stop Spark...")
         spark.stop()
 
 if __name__ == "__main__":
