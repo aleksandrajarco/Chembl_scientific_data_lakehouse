@@ -1,0 +1,37 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+
+# Virtual environment
+.venv/
+venv/
+env/
+
+# IDE
+.idea/
+.vscode/
+
+# Environment / secrets
+.env
+.env.*
+
+# PySpark / Spark output
+spark-warehouse/
+*.parquet
+
+# Local generated data
+data/raw/
+data/silver/
+data/transformed/
+
+# Local Spark output
+chembl_spark_output/
+spark_output/
+
+# Logs
+*.log
+
+# OS
+.DS_Store
+Thumbs.db
