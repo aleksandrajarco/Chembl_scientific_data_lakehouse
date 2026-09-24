@@ -57,12 +57,12 @@ def main() -> None:
     duplicate_ids = check_duplicate_activity_ids(records)
 
     print(f"Missing fields: {missing_fields}")
-    print(f"Duplicate fields: {duplicate_ids}")
+    print(f"Duplicate activity IDs: {duplicate_ids}")
 
     if missing_fields:
         print(f"Example of missing fields: {missing_fields[:3]}")
     if duplicate_ids:
-        print(f"Example of duplicate fields: {duplicate_ids[:3]}")
+        print(f"Example of duplicate activity IDs: {duplicate_ids[:3]}")
 
 
 if __name__ == "__main__":
