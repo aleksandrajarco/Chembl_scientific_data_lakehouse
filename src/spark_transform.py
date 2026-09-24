@@ -3,12 +3,11 @@ from pathlib import Path
 from pyspark.sql import DataFrame, SparkSession
 from pyspark.sql.functions import col
 
-from quality.check_activity import check_invalid_pchembl_values
 from config import SPARK_OUTPUT_DIR
 from quality.check_activity import (
     check_duplicate_activity_ids_df,
-    check_invalid_standard_values,
     check_required_fields_df,
+    check_invalid_numerical_values
 )
 
 SELECTED_COLUMNS = (
@@ -137,14 +136,14 @@ def main() -> None:
 
     try:
         df = read_json(spark, input_files)
-        invalid_standard_values = check_invalid_standard_values(df)
+        invalid_standard_values = check_invalid_numerical_values(df, "standard_value")
         print(f"Invalid standard values: {invalid_standard_values}")
         if invalid_standard_values > 0:
             raise ValueError(
                 f"Data quality check failed: "
                 f"{invalid_standard_values} invalid standard values found"
             )
-        invalid_pchembl_values = check_invalid_pchembl_values(df)
+        invalid_pchembl_values = check_invalid_numerical_values(df, "pchembl_value")
         if invalid_pchembl_values > 0:
             raise ValueError(
                 f"Data quality check failed: "
