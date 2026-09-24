@@ -1,7 +1,8 @@
 from pyspark.sql import SparkSession
 
-def main():
-    spark =(
+
+def main() -> None:
+    spark = (
         SparkSession.builder
         .appName("ChemblIngestion")
         .master("local[*]")
@@ -15,6 +16,7 @@ def main():
     df.show(5, truncate=False)
 
     spark.stop()
+
 
 if __name__ == "__main__":
     main()

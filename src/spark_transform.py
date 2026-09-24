@@ -97,6 +97,7 @@ def explain_filter(
         .explain()
     )
 
+
 def write_partitioned_parquet(
     df: DataFrame,
     output_path: Path,
@@ -111,6 +112,7 @@ def write_partitioned_parquet(
     )
 
     print(f"Partitioned Parquet data written to: {output_path}")
+
 
 def main() -> None:
     project_root = Path(__file__).resolve().parents[1]

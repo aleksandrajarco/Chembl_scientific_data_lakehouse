@@ -1,34 +1,42 @@
 import json
 from pathlib import Path
+from typing import Any
 
-def load_json(file_path):
-    with open(file_path) as file:
-        data = json.load(file)
+
+def load_json(file_path: Path) -> list[dict[str, Any]]:
+    with file_path.open(encoding="utf-8") as file:
+        data: list[dict[str, Any]] = json.load(file)
     return data
 
-def check_required_fields(records):
+
+def check_required_fields(
+    records: list[dict[str, Any]],
+) -> list[dict[str, Any]]:
     required_fields = [
         "activity_id",
         "molecule_chembl_id",
         "target_chembl_id",
     ]
-    problems =[]
+    problems = []
     for record in records:
         for field in required_fields:
             if record.get(field) is None:
                 problems.append({
-                    "activity_id": record["activity_id"],
-                    "field":field,
+                    "activity_id": record.get("activity_id"),
+                    "field": field,
                 })
     return problems
 
-def check_duplicate_activity_ids(records):
-    activity_ids =[
-        record["activity_id"] for record in records
-        if record["activity_id"] is not None
+
+def check_duplicate_activity_ids(
+    records: list[dict[str, Any]],
+) -> list[str | int]:
+    activity_ids = [
+        record.get("activity_id") for record in records
+        if isinstance(record.get("activity_id"), (str, int))
     ]
 
-    duplicates =[]
+    duplicates: list[str | int] = []
     seen = set()
 
     for activity_id in activity_ids:
@@ -38,21 +46,23 @@ def check_duplicate_activity_ids(records):
             seen.add(activity_id)
     return duplicates
 
-def main():
+
+def main() -> None:
     file_path = Path("../data/transformed/combined.json")
 
     records = load_json(file_path)
-    print("Total records: {}".format(len(records)))
+    print(f"Total records: {len(records)}")
     missing_fields = check_required_fields(records)
     duplicate_ids = check_duplicate_activity_ids(records)
 
-    print("Missing fields: {}".format(missing_fields))
-    print("Duplicate fields: {}".format(duplicate_ids))
+    print(f"Missing fields: {missing_fields}")
+    print(f"Duplicate fields: {duplicate_ids}")
 
     if missing_fields:
-        print("Example of missing fields: {}".format(missing_fields[:3]))
+        print(f"Example of missing fields: {missing_fields[:3]}")
     if duplicate_ids:
-        print("Example of duplicate fields: {}".format(duplicate_ids[:3]))
+        print(f"Example of duplicate fields: {duplicate_ids[:3]}")
+
 
 if __name__ == "__main__":
     main()

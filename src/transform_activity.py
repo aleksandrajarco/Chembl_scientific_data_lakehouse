@@ -1,9 +1,8 @@
 import json
 from pathlib import Path
+from typing import Any
 
-from src.ingest_chembl import save_json
-
-FIELDS = [
+FIELDS = (
     "activity_id",
     "molecule_chembl_id",
     "target_chembl_id",
@@ -13,23 +12,29 @@ FIELDS = [
     "standard_units",
     "pchembl_value",
     "document_chembl_id",
-]
+)
 
-def get_raw_files(input_dir):
+
+def get_raw_files(input_dir: Path) -> list[Path]:
     return sorted(input_dir.glob("page_*.json"))
 
-def load_json(file_path):
-    with open(file_path) as json_file:
-        data = json.load(json_file)
+
+def load_json(file_path: Path) -> Any:
+    with file_path.open(encoding="utf-8") as json_file:
+        data: Any = json.load(json_file)
     return data
 
-def extract_activities(data):
+
+def extract_activities(data: dict[str, Any]) -> list[dict[str, Any]]:
     return data["activities"]
 
-def transform_activities(activities):
-    transformed_activities = []
+
+def transform_activities(
+    activities: list[dict[str, Any]],
+) -> list[dict[str, Any]]:
+    transformed_activities: list[dict[str, Any]] = []
     for activity in activities:
-        record = {}
+        record: dict[str, Any] = {}
         for field in FIELDS:
             record[field] = activity.get(field)
         if record["standard_type"]:
@@ -37,11 +42,16 @@ def transform_activities(activities):
         transformed_activities.append(record)
     return transformed_activities
 
-def save_transformed(file_path, data):
-   with open(file_path, "w", encoding="utf-8") as f:
-        json.dump(data, f, indent=2)
 
-def main():
+def save_transformed(
+    file_path: Path,
+    data: list[dict[str, Any]],
+) -> None:
+    with file_path.open("w", encoding="utf-8") as file:
+        json.dump(data, file, indent=2)
+
+
+def main() -> None:
     input_dir = Path("data/raw")
     output_dir = Path("data/transformed")
     raw_files = get_raw_files(input_dir)
@@ -57,17 +67,19 @@ def main():
         print("Records:", len(transformed))
     combined_file = output_dir / "combined.json"
     combined = combine_transformed_files(output_dir)
-    save_json(combined_file, combined)
+    save_transformed(combined_file, combined)
     print("Total records:", len(combined))
     print("Saved:", combined_file)
 
-def combine_transformed_files(input_dir):
-    combined_files = []
+
+def combine_transformed_files(input_dir: Path) -> list[dict[str, Any]]:
+    combined_files: list[dict[str, Any]] = []
     for file in sorted(input_dir.glob("page_*.json")):
         data = load_json(file)
         combined_files.extend(data)
 
     return combined_files
+
 
 if __name__ == "__main__":
     main()
