@@ -1,9 +1,15 @@
 from pathlib import Path
 
 from pyspark.sql import DataFrame, SparkSession
+from pyspark.sql.functions import col
 
-from src.config import SPARK_OUTPUT_DIR
-
+from quality.check_activity import check_invalid_pchembl_values
+from config import SPARK_OUTPUT_DIR
+from quality.check_activity import (
+    check_duplicate_activity_ids_df,
+    check_invalid_standard_values,
+    check_required_fields_df,
+)
 
 SELECTED_COLUMNS = (
     "activity_id",
@@ -59,7 +65,11 @@ def read_json(
 
 def transform_data(df: DataFrame) -> DataFrame:
     """Select columns required for the Silver dataset."""
-    return df.select(*SELECTED_COLUMNS)
+    return (
+        df.select(*SELECTED_COLUMNS)
+        .withColumn("standard_value", col("standard_value").cast("double"))
+        .withColumn("pchemb_value", col("pchembl_value").cast("double"))
+    )
 
 
 def write_parquet(
@@ -127,9 +137,41 @@ def main() -> None:
 
     try:
         df = read_json(spark, input_files)
-
+        invalid_standard_values = check_invalid_standard_values(df)
+        print(f"Invalid standard values: {invalid_standard_values}")
+        if invalid_standard_values > 0:
+            raise ValueError(
+                f"Data quality check failed: "
+                f"{invalid_standard_values} invalid standard values found"
+            )
+        invalid_pchembl_values = check_invalid_pchembl_values(df)
+        if invalid_pchembl_values > 0:
+            raise ValueError(
+                f"Data quality check failed: "
+                f"{invalid_pchembl_values} invalid pchembl values found"
+            )
         transformed_df = transform_data(df)
 
+        missing_required_fields = check_required_fields_df(
+            transformed_df
+        )
+
+        print(f"Missing required fields: {missing_required_fields}")
+
+        if missing_required_fields > 0:
+            raise ValueError(
+                f"Data quality check failed: "
+                f"{missing_required_fields} rows have missing required fields"
+            )
+
+        duplicate_activity_ids = check_duplicate_activity_ids_df(
+            transformed_df
+        )
+        if duplicate_activity_ids > 0:
+            raise ValueError(
+                f"Data quality check failed: "
+                f"{duplicate_activity_ids} duplicate activity IDs found"
+            )
         transformed_df.show(10, truncate=False)
 
         write_parquet(
@@ -174,6 +216,7 @@ def main() -> None:
 
     finally:
         spark.stop()
+
 
 if __name__ == "__main__":
     main()
