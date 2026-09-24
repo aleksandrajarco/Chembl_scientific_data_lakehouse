@@ -48,7 +48,8 @@ def check_duplicate_activity_ids(
 
 
 def main() -> None:
-    file_path = Path("../data/transformed/combined.json")
+    project_root = Path(__file__).resolve().parents[2]
+    file_path = project_root / "data" / "silver" / "combined.json"
 
     records = load_json(file_path)
     print(f"Total records: {len(records)}")

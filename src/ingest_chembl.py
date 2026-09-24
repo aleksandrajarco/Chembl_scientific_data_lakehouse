@@ -4,7 +4,7 @@ from typing import Any
 
 import requests
 
-from config import API_URL, OUTPUT_DIR, PAGE_SIZE, STATE_FILE
+from src.config import API_URL, OUTPUT_DIR, PAGE_SIZE, STATE_FILE
 
 
 def save_json(file_path: Path, data: dict[str, Any]) -> None:

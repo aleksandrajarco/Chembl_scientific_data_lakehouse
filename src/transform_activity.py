@@ -52,8 +52,10 @@ def save_transformed(
 
 
 def main() -> None:
-    input_dir = Path("data/raw")
-    output_dir = Path("data/transformed")
+    project_root = Path(__file__).resolve().parents[1]
+    input_dir = project_root / "data" / "raw"
+    output_dir = project_root / "data" / "silver"
+    output_dir.mkdir(parents=True, exist_ok=True)
     raw_files = get_raw_files(input_dir)
     print("Found", len(raw_files), "raw files")
 

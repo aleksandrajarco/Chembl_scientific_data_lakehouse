@@ -2,7 +2,7 @@ from pathlib import Path
 
 from pyspark.sql import DataFrame, SparkSession
 
-from config import SPARK_OUTPUT_DIR
+from src.config import SPARK_OUTPUT_DIR
 
 
 SELECTED_COLUMNS = (
