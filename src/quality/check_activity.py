@@ -65,20 +65,6 @@ def check_invalid_numerical_values(df: DataFrame, col_name : str) -> int:
     )
     return invalid.count()
 
-# def check_invalid_standard_values(df: DataFrame) -> int:
-#     invalid = df.filter(
-#         col("standard_value").isNotNull()
-#         & col("standard_value").cast("double").isNull()
-#     )
-#     return invalid.count()
-#
-# def check_invalid_pchembl_values(df: DataFrame) -> int:
-#     invalid = df.filter(
-#         col("pchembl_value").isNotNull()
-#         & col("pchembl_value").cast("double").isNull()
-#     )
-#     return invalid.count()
-
 def main() -> None:
     project_root = Path(__file__).resolve().parents[2]
     file_path = project_root / "data" / "silver" / "combined.json"
