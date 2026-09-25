@@ -1,5 +1,5 @@
 from pathlib import Path
-
+import logging
 from pyspark.sql import DataFrame, SparkSession
 from pyspark.sql.functions import col
 
@@ -8,6 +8,13 @@ from src.quality.check_activity import (
     check_duplicate_activity_ids_df,
     check_required_fields_df,
     check_invalid_numerical_values
+)
+
+logger = logging.getLogger(__name__)
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s %(levelname)s %(name)s - %(message)s",
 )
 
 SELECTED_COLUMNS = (
@@ -32,11 +39,9 @@ def get_input_files(input_dir: Path) -> list[Path]:
             f"No input files found in: {input_dir}"
         )
 
-    print(f"Input directory: {input_dir}")
-    print(f"Files found: {len(input_files)}")
-
+    logger.info("Input directory: %s", input_dir)
+    logger.info("Files found: %s", len(input_files))
     return input_files
-
 
 def create_spark_session() -> SparkSession:
     """Create and configure Spark session."""
@@ -82,17 +87,16 @@ def write_parquet(
         .parquet(str(output_path))
     )
 
-    print(f"Parquet data written to: {output_path}")
-
+    logger.info("Parquet data written to: %s", output_path)
 
 def inspect_dataframe(df: DataFrame) -> None:
     """Display basic DataFrame information."""
     df.show(10, truncate=False)
     df.printSchema()
 
-    print("Rows:", df.count())
-    print("Columns:", df.columns)
-    print("Partitions:", df.rdd.getNumPartitions())
+    logger.info("Rows: %s", df.count())
+    logger.info("Columns: %s", df.columns)
+    logger.info("Partitions: %s", df.rdd.getNumPartitions())
 
 
 def explain_filter(
@@ -120,8 +124,7 @@ def write_partitioned_parquet(
         .parquet(str(output_path))
     )
 
-    print(f"Partitioned Parquet data written to: {output_path}")
-
+    logger.info("Partitioned Parquet data written to: %s", output_path)
 
 def main() -> None:
     project_root = Path(__file__).resolve().parents[1]
@@ -137,17 +140,15 @@ def main() -> None:
     try:
         df = read_json(spark, input_files)
         invalid_standard_values = check_invalid_numerical_values(df, "standard_value")
-        print(f"Invalid standard values: {invalid_standard_values}")
+        logger.info("Invalid standard values: %s", invalid_standard_values)
+
         if invalid_standard_values > 0:
             raise ValueError(
                 f"Data quality check failed: "
                 f"{invalid_standard_values} invalid standard values found"
             )
         invalid_pchembl_values = check_invalid_numerical_values(df, "pchembl_value")
-        print(
-            f"Invalid pchembl values: "
-            f"{invalid_pchembl_values}"
-        )
+        logger.info("Invalid pchembl values: %s", invalid_pchembl_values)
 
         if invalid_pchembl_values > 0:
             raise ValueError(
@@ -161,7 +162,7 @@ def main() -> None:
             transformed_df
         )
 
-        print(f"Missing required fields: {missing_required_fields}")
+        logger.info("Missing required fields: %s", missing_required_fields)
 
         if missing_required_fields > 0:
             raise ValueError(
@@ -177,7 +178,7 @@ def main() -> None:
                 f"Data quality check failed: "
                 f"{duplicate_activity_ids} duplicate activity IDs found"
             )
-        transformed_df.show(10, truncate=False)
+        logger.info("Transformed DataFrame preview:\\n%s", transformed_df._show_string(n=10, truncate=False))
 
         write_parquet(
             transformed_df,
@@ -209,15 +210,9 @@ def main() -> None:
             "KI",
         )
 
-        print(
-            "Partitioned Spark partitions:",
-            partitioned_df.rdd.getNumPartitions(),
-        )
+        logger.info("Partitioned Spark partitions: %s", partitioned_df.rdd.getNumPartitions())
 
-        print(
-            "Silver Spark partitions:",
-            silver_df.rdd.getNumPartitions(),
-        )
+        logger.info("Silver Spark partitions: %s", silver_df.rdd.getNumPartitions())
 
     finally:
         spark.stop()

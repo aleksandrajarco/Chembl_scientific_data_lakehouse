@@ -1,8 +1,16 @@
 from pathlib import Path
+import logging
 
 from pyspark.sql import SparkSession, Row
 from pyspark.sql.functions import col, upper, broadcast
 from config import SPARK_OUTPUT_DIR
+
+logger = logging.getLogger(__name__)
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s %(levelname)s %(name)s - %(message)s",
+)
 
 def main() -> None:
     project_root = Path(__file__).resolve().parents[1]
@@ -14,12 +22,8 @@ def main() -> None:
             f"No input files found in: {input_dir}"
         )
 
-    print(f"Input directory: {input_dir}")
-    print(f"Files found: {len(input_files)}")
-
-    #for file in input_files:
-        #print(f"  - {file.name}")
-
+    logger.info("Input directory: %s", input_dir)
+    logger.info("Files found: %s", len(input_files))
 
     spark = (
         SparkSession.builder
@@ -63,7 +67,7 @@ def main() -> None:
             how="inner"
         )
 
-        print("Records:", skewed_df.count())
+        logger.info("Records: %s", skewed_df.count())
 
         skewed_df.groupBy("key").count().show()
 

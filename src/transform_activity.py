@@ -1,4 +1,5 @@
 import json
+import logging
 from pathlib import Path
 from typing import Any
 
@@ -12,6 +13,13 @@ FIELDS = (
     "standard_units",
     "pchembl_value",
     "document_chembl_id",
+)
+
+logger = logging.getLogger(__name__)
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s %(levelname)s %(name)s - %(message)s",
 )
 
 
@@ -57,7 +65,7 @@ def main() -> None:
     output_dir = project_root / "data" / "silver"
     output_dir.mkdir(parents=True, exist_ok=True)
     raw_files = get_raw_files(input_dir)
-    print("Found", len(raw_files), "raw files")
+    logger.info("Found %s raw files", len(raw_files))
 
     for input_file in raw_files:
         output_file = output_dir / input_file.name
@@ -65,13 +73,13 @@ def main() -> None:
         activities = extract_activities(data)
         transformed = transform_activities(activities)
         save_transformed(output_file, transformed)
-        print("Transformed:", input_file, "-->", output_file)
-        print("Records:", len(transformed))
+        logger.info("Transformed: %s -> %s", input_file, output_file)
+        logger.info("Records: %s", len(transformed))
     combined_file = output_dir / "combined.json"
     combined = combine_transformed_files(output_dir)
     save_transformed(combined_file, combined)
-    print("Total records:", len(combined))
-    print("Saved:", combined_file)
+    logger.info("Total records: %s", len(combined))
+    logger.info("Saved: %s", combined_file)
 
 
 def combine_transformed_files(input_dir: Path) -> list[dict[str, Any]]:

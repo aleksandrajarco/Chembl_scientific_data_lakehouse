@@ -1,10 +1,18 @@
 import json
+import logging
 from pathlib import Path
 from typing import Any
 
 import requests
 
 from config import API_URL, OUTPUT_DIR, PAGE_SIZE, STATE_FILE
+
+logger = logging.getLogger(__name__)
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s %(levelname)s %(name)s - %(message)s",
+)
 
 
 def save_json(file_path: Path, data: dict[str, Any]) -> None:
@@ -21,16 +29,16 @@ def read_or_create_state(state_file: Path) -> tuple[int, int] | None:
         offset = state["offset"]
         completed = state["completed"]
         if completed:
-            print("pagination already completed")
+            logger.info("Pagination already completed")
             return None
         else:
-            print("Resuming from page:", page)
+            logger.info("Resuming from page: %s", page)
 
     else:
         page = 1
         offset = 0
 
-        print("Starting from the beginning")
+        logger.info("Starting from the beginning")
 
     return page, offset
 
@@ -52,7 +60,7 @@ def paginate_over_api(
     while True:
         file_path = output_dir / f"page_{page}.json"
         if file_path.exists():
-            print("File exists:", file_path)
+            logger.info("File exists: %s", file_path)
             data = open_page_file(file_path)
         else:
             params = {
@@ -66,33 +74,33 @@ def paginate_over_api(
                 data = response.json()
 
             except requests.exceptions.HTTPError as e:
-                print(f"HTTP error: {e}")
+                logger.exception("HTTP error while fetching page %s", page)
                 break
 
             except requests.exceptions.Timeout as e:
-                print(f"Timeout error: {e}")
+                logger.exception("Timeout while fetching page %s", page)
                 break
 
             except requests.RequestException as e:
-                print(f"Request error: {e}")
+                logger.exception("Request error while fetching page %s", page)
                 break
 
             except ValueError as e:
-                print(f"Invalid JSON response: {e}")
+                logger.exception("Invalid JSON response for page %s", page)
                 break
 
             save_json(file_path, data)
 
-            print("Saved:", file_path)
+            logger.info("Saved: %s", file_path)
 
         records = data["activities"]
 
-        print("Page:", page)
-        print("Offset:", offset)
-        print("Number of records:", len(records))
+        logger.info("Page: %s", page)
+        logger.info("Offset: %s", offset)
+        logger.info("Number of records: %s", len(records))
 
         if len(records) < limit:
-            print("Last page reached.")
+            logger.info("Last page reached")
             state = {
                 "page": page,
                 "offset": offset,
