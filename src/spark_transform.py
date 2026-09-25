@@ -144,6 +144,10 @@ def main() -> None:
                 f"{invalid_standard_values} invalid standard values found"
             )
         invalid_pchembl_values = check_invalid_numerical_values(df, "pchembl_value")
+        print(
+            f"Invalid pchembl values: "
+            f"{invalid_pchembl_values}"
+        )
         if invalid_pchembl_values > 0:
             raise ValueError(
                 f"Data quality check failed: "
