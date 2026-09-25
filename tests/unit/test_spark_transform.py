@@ -1,6 +1,8 @@
 from pyspark.sql import SparkSession
 from src.spark_transform import transform_data
 
+
+
 def test_transform_data(spark :SparkSession):
     test_data = [
         (
@@ -14,8 +16,18 @@ def test_transform_data(spark :SparkSession):
             "7.2",
             "CHEMBL4",
         ),
+        (
+            2,
+            "CHEMBL5",
+            "CHEMBL6",
+            "CHEMBL7",
+            "IC50",
+            None,
+            "nM",
+            None,
+            "CHEMBL8",
+        ),
     ]
-
     test_df = spark.createDataFrame(
         test_data,
         [
@@ -34,7 +46,9 @@ def test_transform_data(spark :SparkSession):
 
     assert result.schema["standard_value"].dataType.typeName() == "double"
     assert result.schema["pchembl_value"].dataType.typeName() == "double"
-    row = result.first()
+    rows = result.collect()
 
-    assert row["standard_value"] == 25.5
-    assert row["pchembl_value"] == 7.2
+    assert rows[0]["standard_value"] == 25.5
+    assert rows[0]["pchembl_value"] == 7.2
+    assert rows[1]["standard_value"] is None
+    assert rows[1]["pchembl_value"] is None
