@@ -36,3 +36,7 @@ spark_output/
 # OS
 .DS_Store
 Thumbs.db
+
+#IDE specific files
+.idea/
+.*iml
