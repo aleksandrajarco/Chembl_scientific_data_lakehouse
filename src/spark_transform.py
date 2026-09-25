@@ -67,7 +67,7 @@ def transform_data(df: DataFrame) -> DataFrame:
     return (
         df.select(*SELECTED_COLUMNS)
         .withColumn("standard_value", col("standard_value").cast("double"))
-        .withColumn("pchemb_value", col("pchembl_value").cast("double"))
+        .withColumn("pchembl_value", col("pchembl_value").cast("double"))
     )
 
 
@@ -148,11 +148,13 @@ def main() -> None:
             f"Invalid pchembl values: "
             f"{invalid_pchembl_values}"
         )
+
         if invalid_pchembl_values > 0:
             raise ValueError(
                 f"Data quality check failed: "
                 f"{invalid_pchembl_values} invalid pchembl values found"
             )
+
         transformed_df = transform_data(df)
 
         missing_required_fields = check_required_fields_df(
