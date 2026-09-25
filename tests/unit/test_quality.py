@@ -10,6 +10,9 @@ def test_invalid_numerical_values(spark: SparkSession):
     ]
     test_df = spark.createDataFrame(test_data, ["activity_id", "standard_value"])
     result  = check_invalid_numerical_values(test_df, "standard_value")
+
+    # Only the invalid string should be counted.
+    # NULL is allowed and should not be counted as invalid.
     assert result == 1
 
 def test_check_required_fields(spark: SparkSession):

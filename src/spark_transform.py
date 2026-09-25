@@ -3,8 +3,8 @@ from pathlib import Path
 from pyspark.sql import DataFrame, SparkSession
 from pyspark.sql.functions import col
 
-from config import SPARK_OUTPUT_DIR
-from quality.check_activity import (
+from src.config import SPARK_OUTPUT_DIR
+from src.quality.check_activity import (
     check_duplicate_activity_ids_df,
     check_required_fields_df,
     check_invalid_numerical_values
