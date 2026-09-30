@@ -1,12 +1,19 @@
 import json
 import logging
+from idlelib.rpc import request_queue
 from pathlib import Path
 from typing import Any
-
+import time
 import requests
 
-from config import API_URL, OUTPUT_DIR, PAGE_SIZE, STATE_FILE
-
+from config import (
+    API_URL,
+    MAX_RETRIES,
+    OUTPUT_DIR,
+    PAGE_SIZE,
+    RETRY_DELAY,
+    STATE_FILE,
+)
 logger = logging.getLogger(__name__)
 
 logging.basicConfig(
@@ -14,7 +21,27 @@ logging.basicConfig(
     format="%(asctime)s %(levelname)s %(name)s - %(message)s",
 )
 
+def fetch_page(
+    url: str,
+    limit: int,
+    offset: int
+) -> dict:
+    """Fetch one page from Chembl API. """
+    params ={
+        "limit": limit,
+        "offset": offset
+    }
+    for attempt in range(1, MAX_RETRIES + 1):
+        try:
+            response = request.get(url, params=params, timeout=30)
+            response.raise_for_status()
 
+            return response.json()
+        except requests.RequestException as e:
+            logger.warning("Request error (attempt %s/%s):%s", attempt, MAX_RETRIES, e)
+            if attempt > MAX_RETRIES:
+                raise
+            time.sleep(RETRY_DELAY * 2 ** (attempt -1))
 def save_json(file_path: Path, data: dict[str, Any]) -> None:
     with file_path.open("w", encoding="utf-8") as file:
         json.dump(data, file, indent=2)
@@ -69,9 +96,7 @@ def paginate_over_api(
             }
 
             try:
-                response = requests.get(url, params=params, timeout=30)
-                response.raise_for_status()
-                data = response.json()
+                data =fetch_page(url, limit, params)
 
             except requests.exceptions.HTTPError as e:
                 logger.exception("HTTP error while fetching page %s", page)
