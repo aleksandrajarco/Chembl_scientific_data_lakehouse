@@ -38,6 +38,9 @@ def fetch_page(
             response.raise_for_status()
 
             return response.json()
+        except ValueError as e:
+            logger.error("ValueError while fetching offset %s", offset)
+            raise
         except requests.RequestException as e:
             if (isinstance(e, requests.exceptions.ConnectionError)
                 or isinstance(e, requests.exceptions.Timeout)
@@ -53,7 +56,6 @@ def fetch_page(
 def save_json(file_path: Path, data: dict[str, Any]) -> None:
     with file_path.open("w", encoding="utf-8") as file:
         json.dump(data, file, indent=2)
-
 
 def read_or_create_state(state_file: Path) -> tuple[int, int] | None:
     if state_file.exists():
