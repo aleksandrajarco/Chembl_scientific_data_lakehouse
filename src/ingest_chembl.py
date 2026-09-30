@@ -1,5 +1,6 @@
 import json
 import logging
+from http import HTTPStatus
 from idlelib.rpc import request_queue
 from pathlib import Path
 from typing import Any
@@ -38,10 +39,17 @@ def fetch_page(
 
             return response.json()
         except requests.RequestException as e:
-            logger.warning("Request error (attempt %s/%s):%s", attempt, MAX_RETRIES, e)
-            if attempt > MAX_RETRIES:
-                raise
-            time.sleep(RETRY_DELAY * 2 ** (attempt -1))
+            if (isinstance(e, requests.exceptions.ConnectionError)
+                or isinstance(e, requests.exceptions.Timeout)
+                or (e.response is not None and 599 >= e.response.status_code >= 500)):
+                    logger.warning("Request error (attempt %s/%s):%s", attempt, MAX_RETRIES, e)
+                    if attempt == MAX_RETRIES:
+                        raise
+                    time.sleep(RETRY_DELAY * 2 ** (attempt - 1))
+
+            else:
+                logger.error("Request error: %s", e)
+
 def save_json(file_path: Path, data: dict[str, Any]) -> None:
     with file_path.open("w", encoding="utf-8") as file:
         json.dump(data, file, indent=2)
