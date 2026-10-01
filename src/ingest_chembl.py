@@ -51,7 +51,7 @@ def fetch_page(
                 logger.error("Request error: %s", e)
                 raise
 
-            logger.warning("Request error (attempt %s/%s):%s", attempt, MAX_RETRIES, e)
+            logger.error("Request error (attempt %s/%s)", attempt, MAX_RETRIES)
             if attempt == MAX_RETRIES:
                 raise
             time.sleep(RETRY_DELAY * 2 ** (attempt - 1))
