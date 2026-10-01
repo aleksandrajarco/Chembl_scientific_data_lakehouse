@@ -1,7 +1,5 @@
 from unittest.mock import patch, Mock, call
 
-from pyspark.core import status
-from requests import status_codes
 from src.ingest_chembl import fetch_page
 import requests
 import pytest
@@ -69,7 +67,10 @@ def test_fetch_page_retries_on_connection_error():
                 timeout=30,
             )
         ] * 3
-        assert mock_sleep.call_count == 2
+        assert mock_sleep.call_args_list == [
+            call(RETRY_DELAY),
+            call(RETRY_DELAY * 2),
+        ]
 
 def test_fetch_page_retries_on_timeout_error():
     response = make_response()
@@ -87,7 +88,10 @@ def test_fetch_page_retries_on_timeout_error():
         assert mock_get.call_args_list == [
             call(MOCK_URL, params={"limit": MOCK_LIMIT, "offset" : MOCK_OFFSET}, timeout=30),
         ] * 3
-        assert mock_sleep.call_count == 2
+        assert mock_sleep.call_args_list == [
+            call(RETRY_DELAY),
+            call(RETRY_DELAY * 2),
+        ]
 
 def test_fetch_page_for_server_error():
     error_response = Mock()
