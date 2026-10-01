@@ -5,6 +5,7 @@ from requests import status_codes
 from src.ingest_chembl import fetch_page
 import requests
 import pytest
+from src.config import MAX_RETRIES
 
 MOCK_URL = "http://example.com"
 MOCK_LIMIT = 2
@@ -118,7 +119,6 @@ def test_fetch_page_on_nonretryable_error():
     error = requests.HTTPError("400 Error")
     error.response = Mock(status_code=400)
     error_response.raise_for_status.side_effect = error
-    #response = make_response()
     with (patch("src.ingest_chembl.requests.get") as mock_get):
         mock_get.return_value = error_response
         with pytest.raises(requests.HTTPError, match="400 Error"):
@@ -129,3 +129,17 @@ def test_fetch_page_on_nonretryable_error():
             params={"limit": MOCK_LIMIT, "offset": MOCK_OFFSET},
             timeout=30
         )
+
+def test_fetch_page_raises_after_max_retries():
+    error = requests.Timeout("Request timed out")
+
+    with (
+        patch("src.ingest_chembl.requests.get") as mock_get,
+        patch("src.ingest_chembl.time.sleep") as mock_sleep,
+    ):
+
+        mock_get.side_effect = error
+        with pytest.raises(requests.Timeout, match="Request timed out"):
+            fetch_page(MOCK_URL, MOCK_LIMIT, MOCK_OFFSET)
+        assert mock_get.call_count == MAX_RETRIES
+        assert mock_sleep.call_count == MAX_RETRIES - 1
