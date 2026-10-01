@@ -1,13 +1,11 @@
 import json
 import logging
-from http import HTTPStatus
-from idlelib.rpc import request_queue
 from pathlib import Path
 from typing import Any
 import time
 import requests
 
-from config import (
+from src.config import (
     API_URL,
     MAX_RETRIES,
     OUTPUT_DIR,
@@ -34,7 +32,7 @@ def fetch_page(
     }
     for attempt in range(1, MAX_RETRIES + 1):
         try:
-            response = request.get(url, params=params, timeout=30)
+            response = requests.get(url, params=params, timeout=30)
             response.raise_for_status()
 
             return response.json()
@@ -42,16 +40,22 @@ def fetch_page(
             logger.error("ValueError while fetching offset %s", offset)
             raise
         except requests.RequestException as e:
-            if (isinstance(e, requests.exceptions.ConnectionError)
-                or isinstance(e, requests.exceptions.Timeout)
-                or (e.response is not None and 599 >= e.response.status_code >= 500)):
-                    logger.warning("Request error (attempt %s/%s):%s", attempt, MAX_RETRIES, e)
-                    if attempt == MAX_RETRIES:
-                        raise
-                    time.sleep(RETRY_DELAY * 2 ** (attempt - 1))
-
-            else:
+            retryable = (
+                    isinstance(e, (requests.exceptions.ConnectionError, requests.exceptions.Timeout))
+                    or (
+                            e.response is not None
+                            and 500 <= e.response.status_code <= 599
+                    )
+            )
+            if not retryable:
                 logger.error("Request error: %s", e)
+                raise
+
+            logger.warning("Request error (attempt %s/%s):%s", attempt, MAX_RETRIES, e)
+            if attempt == MAX_RETRIES:
+                raise
+            time.sleep(RETRY_DELAY * 2 ** (attempt - 1))
+
 
 def save_json(file_path: Path, data: dict[str, Any]) -> None:
     with file_path.open("w", encoding="utf-8") as file:
@@ -100,13 +104,9 @@ def paginate_over_api(
             logger.info("File exists: %s", file_path)
             data = open_page_file(file_path)
         else:
-            params = {
-                "limit": limit,
-                "offset": offset,
-            }
 
             try:
-                data =fetch_page(url, limit, params)
+                data =fetch_page(url, limit, offset)
 
             except requests.exceptions.HTTPError as e:
                 logger.exception("HTTP error while fetching page %s", page)
