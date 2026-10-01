@@ -4,6 +4,7 @@ from pyspark.core import status
 from requests import status_codes
 from src.ingest_chembl import fetch_page
 import requests
+import pytest
 
 MOCK_URL = "http://example.com"
 MOCK_LIMIT = 2
@@ -111,3 +112,20 @@ def test_fetch_page_for_server_error():
             )
         ] * 2
         assert mock_sleep.call_count == 1
+
+def test_fetch_page_on_nonretryable_error():
+    error_response = Mock()
+    error = requests.HTTPError("400 Error")
+    error.response = Mock(status_code=400)
+    error_response.raise_for_status.side_effect = error
+    #response = make_response()
+    with (patch("src.ingest_chembl.requests.get") as mock_get):
+        mock_get.return_value = error_response
+        with pytest.raises(requests.HTTPError, match="400 Error"):
+            fetch_page(MOCK_URL, MOCK_LIMIT, MOCK_OFFSET)
+
+        mock_get.assert_called_once_with(
+            MOCK_URL,
+            params={"limit": MOCK_LIMIT, "offset": MOCK_OFFSET},
+            timeout=30
+        )
