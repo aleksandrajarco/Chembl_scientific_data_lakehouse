@@ -3,7 +3,7 @@ from unittest.mock import patch, Mock, call
 from src.ingest_chembl import fetch_page
 import requests
 import pytest
-from src.config import MAX_RETRIES
+from src.config import MAX_RETRIES, RETRY_DELAY
 
 MOCK_URL = "http://example.com"
 MOCK_LIMIT = 2
@@ -147,3 +147,21 @@ def test_fetch_page_raises_after_max_retries():
             fetch_page(MOCK_URL, MOCK_LIMIT, MOCK_OFFSET)
         assert mock_get.call_count == MAX_RETRIES
         assert mock_sleep.call_count == MAX_RETRIES - 1
+
+def test_fetch_page_value_error():
+    error_response = Mock()
+    error_message = f"Invalid JSON response"
+    error_response.raise_for_status.return_value = None
+    error_response.json.side_effect = ValueError(error_message)
+
+    with (patch("src.ingest_chembl.requests.get") as mock_get):
+        mock_get.return_value = error_response
+
+        with pytest.raises(ValueError, match=error_message):
+            fetch_page(MOCK_URL, MOCK_LIMIT, MOCK_OFFSET)
+
+        mock_get.assert_called_once_with(
+            MOCK_URL,
+            params={"limit": MOCK_LIMIT, "offset": MOCK_OFFSET},
+            timeout=30
+        )
