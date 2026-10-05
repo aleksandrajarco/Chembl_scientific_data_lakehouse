@@ -22,9 +22,7 @@ spark-warehouse/
 *.parquet
 
 # Local generated data
-data/raw/
-data/silver/
-data/transformed/
+data/
 
 # Local Spark output
 chembl_spark_output/
