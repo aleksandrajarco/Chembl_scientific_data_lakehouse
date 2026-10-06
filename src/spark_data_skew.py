@@ -3,7 +3,7 @@ import logging
 
 from pyspark.sql import SparkSession, Row
 from pyspark.sql.functions import col, upper, broadcast
-from config import SPARK_OUTPUT_DIR
+from src.config import SPARK_OUTPUT_DIR
 
 logger = logging.getLogger(__name__)
 
