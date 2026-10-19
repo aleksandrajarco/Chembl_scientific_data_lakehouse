@@ -124,4 +124,12 @@ Tests are in `tests/unit` and cover API retry behavior, data quality checks, and
 └── README.md
 ```
 
+## Databricks analytics
+
+The [`chembl_databricks_pipeline.ipynb`](chembl_databricks_pipeline.ipynb) notebook demonstrates a Databricks workflow for an existing Silver dataset. It reads Parquet data from a Databricks Volume, profiles and validates it, and writes it to Delta Lake. It then labels records by whether `standard_value` is present and saves the transformed data as `workspace.default.chembl_activity_transformed`.
+
+For the Gold dataset, the notebook filters IC50 records with non-null `standard_value` reported in nM, then groups them by assay and target. It calculates distinct molecule counts and average standard values, writes the result to the Delta table `workspace.default.chembl_activity_gold`, and checks the saved data for duplicate assay–target pairs and invalid aggregate values.
+
+Running the notebook requires a configured Databricks workspace, the source Parquet dataset at the Volume path configured in the notebook, and access to the `workspace.default` catalog and schema.
+
 Generated data and Spark output are excluded from version control by `.gitignore`.
