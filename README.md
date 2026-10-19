@@ -124,9 +124,30 @@ Tests are in `tests/unit` and cover API retry behavior, data quality checks, and
 └── README.md
 ```
 
+## Architecture
+
+```mermaid
+flowchart TD
+    A["ChEMBL REST API"] --> B["Python ingestion"]
+    B --> C["Raw JSON pages + ingestion state"]
+    C --> D["Local PySpark transformation"]
+    D --> E["Data quality checks and type conversion"]
+    E --> F["Parquet output"]
+
+    F -->|"Copy or upload to Databricks"| G["Databricks Volume"]
+    G --> H["Read Silver dataset"]
+    H --> I["Profile, validate and transform"]
+    I --> J[("Delta: chembl_activity_transformed")]
+
+    J --> K["Filter IC50 records with values in nM"]
+    K --> L["Aggregate by assay and target"]
+    L --> M[("Gold: chembl_activity_gold")]
+    M --> N["Validate Gold results"]
+```
+
 ## Databricks analytics
 
-The [`chembl_databricks_pipeline.ipynb`](chembl_databricks_pipeline.ipynb) notebook demonstrates a Databricks workflow for an existing Silver dataset. It reads Parquet data from a Databricks Volume, profiles and validates it, and writes it to Delta Lake. It then labels records by whether `standard_value` is present and saves the transformed data as `workspace.default.chembl_activity_transformed`.
+The [chembl_databricks_pipeline.ipynb](chembl_databricks_pipeline.ipynb) notebook demonstrates a Databricks workflow for an existing Silver dataset. It reads Parquet data from a Databricks Volume, profiles and validates it, and writes it to Delta Lake. It then labels records by whether `standard_value` is present and saves the transformed data as `workspace.default.chembl_activity_transformed`.
 
 For the Gold dataset, the notebook filters IC50 records with non-null `standard_value` reported in nM, then groups them by assay and target. It calculates distinct molecule counts and average standard values, writes the result to the Delta table `workspace.default.chembl_activity_gold`, and checks the saved data for duplicate assay–target pairs and invalid aggregate values.
 
